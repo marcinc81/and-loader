@@ -1,3 +1,7 @@
 # Angular Data Loader
 
-T.B.C.
+## Installation
+t.b.c
+
+## Building
+To generate dist files use command `gulp dist`.
