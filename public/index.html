@@ -1,0 +1,25 @@
+<!doctype html>
+<html>
+    <head>
+        <title>AnD-Loader Test</title>
+        <meta charset="utf-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="author" content="Marcin Chwałek">
+        <style>
+            .ng-cloak {
+                display: none;
+            }            
+        </style>
+    </head>
+    <body class="ng-cloak" ng-cloak ng-app="and-test" ng-controller="main">
+        <h1 ng-if="!done">Loading... {{progress|number:0}}% ...</h1>
+        <h1 ng-if="done">Done!</h1>
+        <div>
+            req 1: {{res1}}<br>
+            req 2: {{res2}}<br> 
+            req 3: {{res3}}
+        </div>
+        <script src="scripts.js"></script>
+    </body>
+</html>
