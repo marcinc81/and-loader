@@ -9,28 +9,32 @@ angular.module('and-loader', [])
 .factory('andLoader', function($http) {
 
 	var _id = 1; // task serial
-	var status;	 // loader status object	
-	var main;    // main task
 
-	var reset = function() {
-		status = {
-			processed: 0,
-			loaded: 0,
-			failed: 0,
-			total: 0
-		};
-	}
-
-	var Task = function(parent) {
+	var Task = function(parent, root) {
 		this.id = _id++;	// new id
 		this.tasks = [];	// list of sub-tasks to process 'then' (after)
 		this.todo = [];		// list of requests to process 
 		this.parent = parent || this;	// reference to parent task
+		this.root = root || this;	// reference to root task
+		this.status;
+
+		if (this.root == this)
+			this.root.reset();
 	}
+
+	// reset stats
+	Task.prototype.reset = function() {
+		this.status = {
+			processed: 0,
+			loaded: 0,
+			failed: 0,
+			total: 0
+		}; 
+	};
 
 	// create sub-task
 	Task.prototype.load = function() {
-		var t = new Task(this);
+		var t = new Task(this, this.root);
 		this.tasks.push(t);
 		return t;
 	}
@@ -50,10 +54,7 @@ angular.module('and-loader', [])
 
 	// start loader
 	Task.prototype.run = function(cb_status) {
-		status.processed = 0;
-		status.loaded = 0;
-		status.failed = 0;
-		return main._run(cb_status);
+		return this.root._run(cb_status);
 	}
 
 	// process all requests
@@ -65,23 +66,23 @@ angular.module('and-loader', [])
 			var t = self.todo[n];
 			$http(t)
 				.then(function(res) {
-					status.loaded++;
-					status.processed++;
+					self.root.status.loaded++;
+					self.root.status.processed++;
 					// if processed all requests then process all sub-tasks
 					if (++processed == self.todo.length) self.processTasks(cb_status);
 
-					if (cb_status) cb_status(status);
+					if (cb_status) cb_status(self.root.status);
 					if (res.config.cb) {
 						res.config.cb(res);
 					}
 				}, function(res) {
-					status.failed++;
-					status.processed++;
+					self.root.status.failed++;
+					self.root.status.processed++;
 					// if processed all requests then process all sub-tasks
 					if (++processed == self.todo.length) self.processTasks(cb_status);
 
 					// TODO exec other method for error handling
-					if (cb_status) cb_status(status);
+					if (cb_status) cb_status(self.root.status);
 					if (res.config.cb) res.config.cb(res);
 				});
 		}
@@ -96,7 +97,7 @@ angular.module('and-loader', [])
 			method: 'GET',
 			cb: cb
 		});
-		status.total++;
+		this.root.status.total++;
 		return this;
 	}
 
@@ -108,7 +109,7 @@ angular.module('and-loader', [])
 			data: data,
 			cb: cb
 		});
-		status.total++;
+		this.root.status.total++;
 		return this;	
 	}
 
@@ -118,9 +119,7 @@ angular.module('and-loader', [])
 	}
 
 	return function() {
-		main = new Task();
-		reset();
-		return main;
+		return new Task();
 	}
 });
 

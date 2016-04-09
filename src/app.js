@@ -20,6 +20,7 @@ app.controller('main', function($scope, andLoader) {
 			$scope.res3 = res.data;
 		})
 		.run(function(status) {
+			console.log(status);
 			$scope.progress = status.processed / status.total * 100;
 			$scope.done = status.processed == status.total;
 		});
