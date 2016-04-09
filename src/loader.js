@@ -1,20 +1,31 @@
+/**
+ * Angular Data Loader
+ *
+ * by Marcin Chwałek (marcinc81@gmail.com)
+ */
+
 var app  = angular.module('and-loader', []);
 
 app.factory('andLoader', function($http) {
 
-	var _id = 1;		// task serial
-	var status = {		// loader status object
-		processed: 0,
-		loaded: 0,
-		failed: 0,
-		total: 0
-	};
+	var _id = 1; // task serial
+	var status;	 // loader status object	
+	var main;    // main task
+
+	var reset = function() {
+		status = {
+			processed: 0,
+			loaded: 0,
+			failed: 0,
+			total: 0
+		};
+	}
 
 	var Task = function(parent) {
-		this.id = _id++;							// new id
-		this.tasks = [];							// list of sub-tasks to process 'then' (after)
-		this.todo = [];								// list of requests to process 
-		this.parent = parent || this;				// reference to parent task
+		this.id = _id++;	// new id
+		this.tasks = [];	// list of sub-tasks to process 'then' (after)
+		this.todo = [];		// list of requests to process 
+		this.parent = parent || this;	// reference to parent task
 	}
 
 	// create sub-task
@@ -39,6 +50,9 @@ app.factory('andLoader', function($http) {
 
 	// start loader
 	Task.prototype.run = function(cb_status) {
+		status.processed = 0;
+		status.loaded = 0;
+		status.failed = 0;
 		return main._run(cb_status);
 	}
 
@@ -64,7 +78,7 @@ app.factory('andLoader', function($http) {
 					status.failed++;
 					status.processed++;
 					// if processed all requests then process all sub-tasks
-					if (++processed == selg.todo.length) self.processTasks(cb_status);
+					if (++processed == self.todo.length) self.processTasks(cb_status);
 
 					// TODO exec other method for error handling
 					if (cb_status) cb_status(status);
@@ -103,8 +117,10 @@ app.factory('andLoader', function($http) {
 		return this.parent.load();
 	}
 
-	// main task
-	var main = new Task();
-	return main;
+	return function() {
+		main = new Task();
+		reset();
+		return main;
+	}
 });
 

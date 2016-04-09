@@ -1,5 +1,4 @@
 require('angular');
-require('angular-route');
 require('./loader.js');
 
 var app = angular.module('and-test', ['and-loader']);
@@ -9,7 +8,7 @@ app.controller('main', function($scope, andLoader) {
 	$scope.progress = 0;
 	$scope.done = false;
 
-	andLoader
+	andLoader()
 		.get('/res-1', function(res) {
 			$scope.res1 = res.data;
 		})
