@@ -4,9 +4,9 @@
  * by Marcin Chwałek (marcinc81@gmail.com)
  */
 
-var app  = angular.module('and-loader', []);
+angular.module('and-loader', [])
 
-app.factory('andLoader', function($http) {
+.factory('andLoader', function($http) {
 
 	var _id = 1; // task serial
 	var status;	 // loader status object	
