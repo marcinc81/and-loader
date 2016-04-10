@@ -17,6 +17,8 @@ angular.module('and-loader', [])
 		this.parent = parent || this;	// reference to parent task
 		this.root = root || this;	// reference to root task
 		this.status;
+		this.processed;
+
 
 		if (this.root == this)
 			this.root.reset();
@@ -24,6 +26,7 @@ angular.module('and-loader', [])
 
 	// reset stats
 	Task.prototype.reset = function() {
+		this.processed = 0;
 		this.status = {
 			processed: 0,
 			loaded: 0,
@@ -54,41 +57,92 @@ angular.module('and-loader', [])
 
 	// start loader
 	Task.prototype.run = function(cb_status) {
+		if (cb_status) cb_status(this.root.status);
 		return this.root._run(cb_status);
 	}
 
 	// process all requests
 	Task.prototype._run = function(cb_status) {
 		var self = this;
-		var processed = 0;
 
 		for (var n in self.todo) {
 			var t = self.todo[n];
+			self._process(t, cb_status);
+		}
+
+		return this;
+	};
+
+	// process to do item
+	Task.prototype._process = function(t, cb_status) {
+		var self = this;
+		// custom request
+		if (t.cust) {
+			t.cust(function(res) {
+				self.root.status.loaded++;
+				self.root.status.processed++;
+				if (++self.processed == self.todo.length) self.processTasks(cb_status);
+
+				if (cb_status) cb_status(self.root.status);
+				if (t.cb) {
+					t.cb(res, false);
+				}
+			}, function(res) {
+				self.root.status.failed++;
+				self.root.status.processed++;
+				if (++self.processed == self.todo.length) self.processTasks(cb_status);
+
+				if (cb_status) cb_status(self.root.status);
+				if (t.cb) {
+					t.cb(res, true);
+				}
+			});
+		} else 
+		// promise request
+		if (t.fn) {
+			t.fn().then(function(res) {
+				self.root.status.loaded++;
+				self.root.status.processed++;
+				if (++self.processed == self.todo.length) self.processTasks(cb_status);
+
+				if (cb_status) cb_status(self.root.status);
+				if (t.cb) {
+					t.cb(res, false);
+				}
+			}, function(res) {
+				self.root.status.failed++;
+				self.root.status.processed++;
+				if (++self.processed == self.todo.length) self.processTasks(cb_status);
+
+				if (cb_status) cb_status(self.root.status);
+				if (t.cb) {
+					t.cb(res, true);
+				}
+			});
+		} else {
+			// simple http request
 			$http(t)
 				.then(function(res) {
 					self.root.status.loaded++;
 					self.root.status.processed++;
-					// if processed all requests then process all sub-tasks
-					if (++processed == self.todo.length) self.processTasks(cb_status);
+					if (++self.processed == self.todo.length) self.processTasks(cb_status);
 
 					if (cb_status) cb_status(self.root.status);
 					if (res.config.cb) {
-						res.config.cb(res);
+						res.config.cb(res, false);
 					}
 				}, function(res) {
 					self.root.status.failed++;
 					self.root.status.processed++;
-					// if processed all requests then process all sub-tasks
-					if (++processed == self.todo.length) self.processTasks(cb_status);
+					if (++self.processed == self.todo.length) self.processTasks(cb_status);
 
-					// TODO exec other method for error handling
 					if (cb_status) cb_status(self.root.status);
-					if (res.config.cb) res.config.cb(res);
+					if (res.config.cb) {
+						res.config.cb(res, true);
+					}
 				});
 		}
-
-		return this;
-	}
+	};
 
 	// new GET request 
 	Task.prototype.get = function(url, cb) {
@@ -111,6 +165,25 @@ angular.module('and-loader', [])
 		});
 		this.root.status.total++;
 		return this;	
+	}
+
+	// add custom request, like $resource - it must return a promise
+	Task.prototype.res = function(fn, cb) {
+		this.todo.push({
+			fn: fn,
+			cb: cb
+		});
+		this.root.status.total++;
+		return this;
+	}
+
+	Task.prototype.cust = function(fn, cb) {
+		this.todo.push({
+			cust: fn,
+			cb: cb
+		});
+		this.root.status.total++;
+		return this;
 	}
 
 	// begin new sub-task group (tasks to be exec after)
