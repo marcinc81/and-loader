@@ -56,7 +56,7 @@ Parameters:
 - `error` - boolean value, if true: there was an error
 
 ### Custom requests
-Sometimes you can't just fetch some URL, you need to do some preprocessing or prepare request parametres based on response of previous requests' responses. Here comes more universal method 'cust' (abbr. of 'custom').
+Sometimes you can't just fetch some URL, you need to do some preprocessing or prepare request parametres based on response of previous requests. Here comes more universal method 'cust' (abbr. of 'custom').
 
 ```
 .cust(function(onSuccess, onError) {
