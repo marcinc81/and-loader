@@ -41,7 +41,8 @@ All methods can be called in a chain. It means it doesn't need to be executed di
 | `cust(fn, cb)` | custom request, see 'Custom requests' section |
 | `then()` | creates group of requests, which will be loaded after finishing of loading requests from previous group |
 | `end()` | finishes block (after `then()`) of requests definitions and returns previous group (btw. it's probably useless) |
-| `run(staus)` | runs the loader and start processing requests, `status` is a callback function used to track loading progress |
+| `watch(cb)` | register loading progress watcher, see 'Traking progress' section |
+| `run(cb)` | runs the loader and start processing requests; optional `cb` - you can register a watcher here |
 
 ### Callback function
 Use this function to process a response. Callback function used for each kind of requests has the same format:
@@ -82,7 +83,7 @@ For instance:
 `.get('/1').then().get('/2').end().get('/3').run()` - `/2` last, when `/1` & `/3` got responses
 
 ## Tracking progress
-`run` method contains optional parameter: `status`. Use it to track loading progress! See example below:
+Use `watch` method or `run` with optional parameter `cb`. Registered function will be called when status is changed. See example below:
 
 ```
 andLoader()

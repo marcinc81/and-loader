@@ -25,9 +25,10 @@ app.controller('main', function($scope, $http, andLoader) {
 		.get('/res', function(res) {
 				$scope.res4 = res.data;
 			})
-		.run(function(status) {
+		.watch(function(status) {
 			$scope.progress = status.processed / status.total * 100;
 			$scope.done = status.processed == status.total;
-		});
+		})
+		.run();
 
 });
