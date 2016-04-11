@@ -18,7 +18,7 @@ angular.module('and-loader', [])
 		this.root = root || this;	// reference to root task
 		this.status;
 		this.processed;
-
+		this.status_watchers = [];
 
 		if (this.root == this)
 			this.root.reset();
@@ -57,30 +57,31 @@ angular.module('and-loader', [])
 
 	// start loader
 	Task.prototype.run = function(cb_status) {
-		if (cb_status) cb_status(this.root.status);
-		return this.root._run(cb_status);
+		this.root.status_watchers.push(cb_status);
+		this._update();
+		return this.root._run();
 	}
 
 	// process all requests
-	Task.prototype._run = function(cb_status) {
+	Task.prototype._run = function() {
 		var self = this;
 		for (var n in self.todo) {
 			var t = self.todo[n];
-			self._process(t, cb_status);
+			self._process(t);
 		}
 		return this;
 	};
 
 
 	// process to do item
-	Task.prototype._process = function(t, cb_status) {
+	Task.prototype._process = function(t) {
 		var self = this;
 		// custom request
 		if (t.cust) {
 			t.cust(function(res) {
-				self._handle(res, t, false, cb_status);
+				self._handle(res, t, false);
 			}, function(res) {
-				self._handle(res, t, true, cb_status);
+				self._handle(res, t, true);
 			});
 		} else 
 		// promise request
@@ -88,36 +89,44 @@ angular.module('and-loader', [])
 			// is it promise object or function returning promise?
 			var promise = t.fn.then? t.fn : t.fn();
 			promise.then(function(res) {
-				self._handle(res, t, false, cb_status);
+				self._handle(res, t, false);
 			}, function(res) {
-				self._handle(res, t, true, cb_status);
+				self._handle(res, t, true);
 			});			
 		} else {
 			// simple http request
 			$http(t)
 				.then(function(res) {
-					self._handle(res, t, false, cb_status);
+					self._handle(res, t, false);
 				}, function(res) {
-					self._handle(res, t, true, cb_status);
+					self._handle(res, t, true);
 				});
 		}
 	};
 
 	// handle task
-	Task.prototype._handle = function(res, t, error, cb_status) {
+	Task.prototype._handle = function(res, t, error) {
 		var self = this; 
 		if (error) self.root.status.failed++;
 		else self.root.status.loaded++;
 
 		self.root.status.processed++;
-		if (++self.processed == self.todo.length) self.processTasks(cb_status);
+		if (++self.processed == self.todo.length) self.processTasks();
 
-		if (cb_status) cb_status(self.root.status);
+		this._update();
 		if (t.cb) {
 			t.cb(res, false);
 		}
 
 	};
+
+	// update all status watchers
+	Task.prototype._update = function() {
+		for (var n in this.root.status_watchers) {
+			var w = this.root.status_watchers[n];
+			if (typeof w == 'function') w(this.root.status);
+		}
+	}
 
 	// new GET request 
 	Task.prototype.get = function(url, cb) {
@@ -166,8 +175,14 @@ angular.module('and-loader', [])
 		return this.parent.load();
 	}
 
+	// watch loader state
+	Task.prototype.watch = function(cb) {
+		this.root.status_watchers.push(cb);
+		return this;
+	}
+
 	return function() {
 		return new Task();
 	}
-});
+})
 
