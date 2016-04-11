@@ -64,14 +64,13 @@ angular.module('and-loader', [])
 	// process all requests
 	Task.prototype._run = function(cb_status) {
 		var self = this;
-
 		for (var n in self.todo) {
 			var t = self.todo[n];
 			self._process(t, cb_status);
 		}
-
 		return this;
 	};
+
 
 	// process to do item
 	Task.prototype._process = function(t, cb_status) {
@@ -79,69 +78,45 @@ angular.module('and-loader', [])
 		// custom request
 		if (t.cust) {
 			t.cust(function(res) {
-				self.root.status.loaded++;
-				self.root.status.processed++;
-				if (++self.processed == self.todo.length) self.processTasks(cb_status);
-
-				if (cb_status) cb_status(self.root.status);
-				if (t.cb) {
-					t.cb(res, false);
-				}
+				self._handle(res, t, false, cb_status);
 			}, function(res) {
-				self.root.status.failed++;
-				self.root.status.processed++;
-				if (++self.processed == self.todo.length) self.processTasks(cb_status);
-
-				if (cb_status) cb_status(self.root.status);
-				if (t.cb) {
-					t.cb(res, true);
-				}
+				self._handle(res, t, true, cb_status);
 			});
 		} else 
 		// promise request
 		if (t.fn) {
-			t.fn().then(function(res) {
-				self.root.status.loaded++;
-				self.root.status.processed++;
-				if (++self.processed == self.todo.length) self.processTasks(cb_status);
-
-				if (cb_status) cb_status(self.root.status);
-				if (t.cb) {
-					t.cb(res, false);
-				}
+			// is it promise object or function returning promise?
+			var promise = t.fn.then? t.fn : t.fn();
+			promise.then(function(res) {
+				self._handle(res, t, false, cb_status);
 			}, function(res) {
-				self.root.status.failed++;
-				self.root.status.processed++;
-				if (++self.processed == self.todo.length) self.processTasks(cb_status);
-
-				if (cb_status) cb_status(self.root.status);
-				if (t.cb) {
-					t.cb(res, true);
-				}
-			});
+				self._handle(res, t, true, cb_status);
+			});			
 		} else {
 			// simple http request
 			$http(t)
 				.then(function(res) {
-					self.root.status.loaded++;
-					self.root.status.processed++;
-					if (++self.processed == self.todo.length) self.processTasks(cb_status);
-
-					if (cb_status) cb_status(self.root.status);
-					if (res.config.cb) {
-						res.config.cb(res, false);
-					}
+					self._handle(res, t, false, cb_status);
 				}, function(res) {
-					self.root.status.failed++;
-					self.root.status.processed++;
-					if (++self.processed == self.todo.length) self.processTasks(cb_status);
-
-					if (cb_status) cb_status(self.root.status);
-					if (res.config.cb) {
-						res.config.cb(res, true);
-					}
+					self._handle(res, t, true, cb_status);
 				});
 		}
+	};
+
+	// handle task
+	Task.prototype._handle = function(res, t, error, cb_status) {
+		var self = this; 
+		if (error) self.root.status.failed++;
+		else self.root.status.loaded++;
+
+		self.root.status.processed++;
+		if (++self.processed == self.todo.length) self.processTasks(cb_status);
+
+		if (cb_status) cb_status(self.root.status);
+		if (t.cb) {
+			t.cb(res, false);
+		}
+
 	};
 
 	// new GET request 

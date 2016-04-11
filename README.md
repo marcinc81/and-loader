@@ -3,7 +3,7 @@
 This is a simple and powerful data loader wich helps you to track and keep right order of loaded resources on your website. Please imagine, you have to load 4 resources from 4 different URLs, when the last one must be loaded as last - and always last. Instead to write some complex logic or nesting requests in response handlers, you can just use andLoader. Check out how to use it, it's pretty simple!
 
 ## Installation
-The simples way: `npm i and-loader --save`. More complex way: just download it and include to your website.
+The simplest way: `npm i and-loader --save`. More complex way: just download it and include to your website.
 
 
 ## Usage
@@ -37,7 +37,7 @@ All methods can be called in a chain. It means it doesn't need to be executed di
 | `andLoader()` | create new loader instance |
 | `get(addr, cb)` | simple HTTP GET request, where `addr` is resource URL and `cb` is just a callback, more in 'Callback function' section |
 | `post(addr, data, cb)` | simple HTTP POST request, params as above, `data` is a request's payload |
-| `res(fn, cb)` | promise request, `fn` function returning promise - this will be resolved inside loader and `cb` will be called |
+| `res(fn, cb)` | promise request, `fn` function returning promise or promise obcject (loader won't fire downloading in this case as it started already) - this will be resolved inside loader and `cb` will be called |
 | `cust(fn, cb)` | custom request, see 'Custom requests' section |
 | `then()` | creates group of requests, which will be loaded after finishing of loading requests from previous group |
 | `end()` | finishes block (after `then()`) of requests definitions and returns previous group (btw. it's probably useless) |

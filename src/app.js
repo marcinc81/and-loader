@@ -19,10 +19,12 @@ app.controller('main', function($scope, $http, andLoader) {
 			}, function(res) {
 				$scope.res2 = res.data;
 			})
-		.then()
-		.get('/res-3', function(res) {
-			$scope.res3 = res.data;
-		})
+		.res($http.get('/res-3'), function(res) {	// this will start immediately 
+				$scope.res3 = res.data;
+			})
+		.get('/res', function(res) {
+				$scope.res4 = res.data;
+			})
 		.run(function(status) {
 			$scope.progress = status.processed / status.total * 100;
 			$scope.done = status.processed == status.total;
