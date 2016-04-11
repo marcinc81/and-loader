@@ -184,5 +184,5 @@ angular.module('and-loader', [])
 	return function() {
 		return new Task();
 	}
-});
+})
 
